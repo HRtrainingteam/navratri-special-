@@ -23,9 +23,9 @@ header{height:78px;padding:0 6vw;display:flex;align-items:center;justify-content
 .archer.release .coded-arrow{animation:arrowShoot .65s cubic-bezier(.2,.7,.1,1) forwards}
 .archer.release .bow-string{animation:stringSnap .25s ease-out forwards}
 @keyframes bowDraw{0%,100%{transform:rotate(0)}45%{transform:rotate(-2deg) scaleX(.97)}100%{transform:rotate(0)}}
-@keyframes stringDraw{0%{d:path("M82 55 L154 180 L82 305")}100%{d:path("M82 55 L116 180 L82 305")}}
-@keyframes arrowDraw{0%{transform:translateX(0)}100%{transform:translateX(-38px)}}
-@keyframes arrowShoot{0%{transform:translateX(-38px)}100%{transform:translateX(300px);opacity:0}}
+@keyframes stringDraw{0%{d:path("M82 55 L82 305")}100%{d:path("M82 55 L122 180 L82 305")}}
+@keyframes arrowDraw{0%{transform:translateX(0)}100%{transform:translateX(38px)}}
+@keyframes arrowShoot{0%{transform:translateX(38px)}100%{transform:translateX(300px);opacity:0}}
 @keyframes stringSnap{0%{opacity:1}100%{opacity:.65}}
 @media(max-width:850px){.coded-bow{transform:scale(.82);transform-origin:20% 70%}}
 /* Keep the complete Mata photographs visible */
