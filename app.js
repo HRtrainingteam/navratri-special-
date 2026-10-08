@@ -13,7 +13,7 @@ function select(i){const d=D[i];document.querySelectorAll('.day').forEach((x,n)=
 select(0);
 const wheel=document.querySelector('#wheel');D.forEach((d,i)=>{const s=document.createElement('i');s.style.cssText='position:absolute;width:34px;height:34px;border-radius:50%;background:'+d[2]+';left:calc(50% + '+(Math.cos(i/9*Math.PI*2-Math.PI/2)*42)+'% - 17px);top:calc(50% + '+(Math.sin(i/9*Math.PI*2-Math.PI/2)*42)+'% - 17px);border:3px solid #19090d';wheel.appendChild(s)});
 const form=document.querySelector('#employeeForm'),fileInput=document.querySelector('#photoUpload'),preview=document.querySelector('#uploadPreview'),previewImage=document.querySelector('#previewImage'),previewName=document.querySelector('#previewName'),formMessage=document.querySelector('#formMessage'),employeeName=document.querySelector('#employeeName'),employeeCode=document.querySelector('#employeeCode'),locationInput=document.querySelector('#location'),department=document.querySelector('#department');
-const UPLOAD_URL='https://script.google.com/macros/s/AKfycbw5dYoJ8TKuIxoIyQ1cZhJBZMPKfDWOELl5c4HeJHKsY_lAKPYnoOFfGD1x9Cwfe_1AIA/exec';
+const UPLOAD_URL='https://script.google.com/macros/s/AKfycbxZaaAJBsXsOmKdJGyXZv2gHV-6gh6_7mxytTYj10tmkytvouwmpcf-OFfUaMS_bbtPeg/exec';
 let selectedFiles=[];
 function fileToData(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(file)})}
 fileInput.addEventListener('change',()=>{
