@@ -384,7 +384,7 @@ if (form && fileInput) {
 
   const START_X = 82;
   const START_CHANCES = 5;
-  const SPEED = 50;
+  const SPEED = 90;
   const HIT_DISTANCE = 95;
 
   let x = START_X;
