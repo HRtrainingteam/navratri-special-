@@ -357,215 +357,201 @@ if (form && fileInput) {
 
 /* ==========================================
    4. DUSSEHRA RAVAN GAME
-   FIXED: RESTART AFTER EVERY WIN
+   FIXED: PLAY AGAIN BUTTON + ROUND RESET
    ========================================== */
 
-const ravan = document.querySelector('#ravan');
-const field = document.querySelector('#field');
-const fire = document.querySelector('#fire');
-const again = document.querySelector('#again');
-const win = document.querySelector('#win');
-const boom = document.querySelector('#boom');
+(() => {
+  const ravan = document.querySelector('#ravan');
+  const field = document.querySelector('#field');
+  const fire = document.querySelector('#fire');
+  const again = document.querySelector('#again');
+  const win = document.querySelector('#win');
+  const boom = document.querySelector('#boom');
+  const message = document.querySelector('#message');
+  const chancesDisplay = document.querySelector('#chances');
+  const hitsDisplay = document.querySelector('#hits');
+  const archer = document.querySelector('#archer');
 
-const message = document.querySelector('#message');
-const chancesDisplay = document.querySelector('#chances');
-const hitsDisplay = document.querySelector('#hits');
-const archer = document.querySelector('#archer');
-
-let x = 82;
-let direction = -1;
-let running = true;
-let chances = 5;
-let hits = 0;
-let lastFrame = 0;
-let animating = false;
-
-// Keep track of delayed game actions so they can be
-// cancelled when the player starts another round.
-let gameTimers = [];
-
-function gameDelay(callback, delay) {
-  const timer = setTimeout(() => {
-    gameTimers = gameTimers.filter(id => id !== timer);
-    callback();
-  }, delay);
-
-  gameTimers.push(timer);
-
-  return timer;
-}
-
-function clearGameTimers() {
-  gameTimers.forEach(timer => clearTimeout(timer));
-  gameTimers = [];
-}
-
-
-/* Ravan movement: start only one animation loop. */
-
-function gameLoop(timestamp) {
-  if (!lastFrame) lastFrame = timestamp;
-
-  // Limit large jumps after the tab has been inactive.
-  const delta = Math.min((timestamp - lastFrame) / 1000, 0.05);
-  lastFrame = timestamp;
-
-  if (running && !animating && ravan) {
-    x += direction * 50 * delta;
-
-    if (x <= 4) {
-      x = 4;
-      direction = 1;
-    }
-
-    if (x >= 88) {
-      x = 88;
-      direction = -1;
-    }
-
-    ravan.style.left = x + '%';
+  if (!ravan || !field || !fire || !again || !win || !boom ||
+      !message || !chancesDisplay || !hitsDisplay || !archer) {
+    console.error('Ravan game could not start: check the game element IDs in index.html.');
+    return;
   }
 
-  requestAnimationFrame(gameLoop);
-}
+  // These are buttons, not form-submit controls.
+  fire.type = 'button';
+  again.type = 'button';
 
-if (ravan && field && fire && again && win && boom && archer) {
-  // Start one persistent movement loop.
-  requestAnimationFrame(gameLoop);
+  const START_X = 82;
+  const START_CHANCES = 5;
+  const SPEED = 50;
+  const HIT_DISTANCE = 95;
 
+  let x = START_X;
+  let direction = -1;
+  let running = true;
+  let chances = START_CHANCES;
+  let hits = 0;
+  let lastFrame = 0;
+  let animating = false;
+  let timers = [];
 
-  /* Shoot the arrow. */
+  function delay(callback, ms) {
+    const id = window.setTimeout(() => {
+      timers = timers.filter(timer => timer !== id);
+      callback();
+    }, ms);
+    timers.push(id);
+    return id;
+  }
 
-  function shootArrow() {
+  function clearTimers() {
+    timers.forEach(id => window.clearTimeout(id));
+    timers = [];
+  }
+
+  function gameLoop(timestamp) {
+    if (!lastFrame) lastFrame = timestamp;
+    const delta = Math.min((timestamp - lastFrame) / 1000, 0.05);
+    lastFrame = timestamp;
+
+    if (running && !animating) {
+      x += direction * SPEED * delta;
+      if (x <= 4) { x = 4; direction = 1; }
+      if (x >= 88) { x = 88; direction = -1; }
+      ravan.style.left = x + '%';
+    }
+    window.requestAnimationFrame(gameLoop);
+  }
+
+  function resetArcher() {
+    archer.classList.remove('draw', 'release');
+    void archer.offsetWidth;
+  }
+
+  function showWin() {
+    running = false;
+    animating = false;
+    fire.disabled = true;
+    ravan.style.opacity = '0';
+    ravan.style.visibility = 'hidden';
+    message.textContent = 'Bullseye! Ravan defeated 🔥';
+    hits += 1;
+    hitsDisplay.textContent = String(hits);
+
+    boom.classList.remove('show');
+    void boom.offsetWidth;
+    boom.classList.add('show');
+    delay(() => {
+      win.style.visibility = 'visible';
+      win.style.pointerEvents = 'auto';
+      win.classList.add('show');
+    }, 450);
+  }
+
+  function shootArrow(event) {
+    if (event) event.preventDefault();
     if (!running || chances <= 0 || animating) return;
 
     animating = true;
-    chances--;
-
-    chancesDisplay.textContent = chances;
+    chances -= 1;
+    chancesDisplay.textContent = String(chances);
     fire.disabled = true;
-
-    archer.classList.remove('draw', 'release');
-
-    // Restart the CSS animation reliably.
-    void archer.offsetWidth;
-
+    resetArcher();
     archer.classList.add('draw');
     message.textContent = 'Drawing the bow…';
 
-    gameDelay(() => {
+    delay(() => {
+      if (!running) return;
       archer.classList.remove('draw');
       archer.classList.add('release');
-
       message.textContent = 'Arrow released! 🏹';
 
-      // Calculate Ravan's position relative to the field.
       const fieldRect = field.getBoundingClientRect();
       const ravanRect = ravan.getBoundingClientRect();
-
-      const ravanCenter =
-        ravanRect.left + ravanRect.width / 2 - fieldRect.left;
-
+      const ravanCenter = ravanRect.left + ravanRect.width / 2 - fieldRect.left;
       const fieldCenter = fieldRect.width / 2;
+      const direct = Math.abs(ravanCenter - fieldCenter) < HIT_DISTANCE;
 
-      // Preserve your original hit detection.
-      const direct = Math.abs(ravanCenter - fieldCenter) < 95;
-
-      gameDelay(() => {
+      delay(() => {
         archer.classList.remove('release');
-
         if (direct) {
-          hits++;
+          showWin();
+          return;
+        }
 
-          hitsDisplay.textContent = hits;
-          message.textContent = 'Bullseye! Ravan defeated 🔥';
-
-          // Stop movement and shooting for the completed round.
-          running = false;
-          animating = false;
-          fire.disabled = true;
-
-          // Hide Ravan and replay the explosion animation.
-          ravan.style.opacity = '0';
-
-          boom.classList.remove('show');
-          void boom.offsetWidth;
-          boom.classList.add('show');
-
-          // Display the victory overlay.
-          gameDelay(() => {
-            win.classList.add('show');
-          }, 450);
-
+        animating = false;
+        if (chances > 0) {
+          message.textContent = 'Missed! ' + chances +
+            ' chance' + (chances === 1 ? '' : 's') + ' left.';
+          fire.disabled = false;
         } else {
-          message.textContent = chances
-            ? 'Missed! ' + chances +
-              ' chance' + (chances === 1 ? '' : 's') + ' left.'
-            : 'No chances left — try again!';
-
-          animating = false;
-
-          if (chances > 0) {
-            fire.disabled = false;
-          } else {
-            // Stop the round when all chances are used.
-            running = false;
-            fire.disabled = true;
-          }
+          running = false;
+          fire.disabled = true;
+          message.textContent = 'No chances left — press Play Again to retry!';
         }
       }, 650);
     }, 650);
   }
 
-
-  /* Restart the complete game after a win or loss. */
-
   function restartGame(event) {
     if (event) {
       event.preventDefault();
       event.stopPropagation();
+      if (typeof event.stopImmediatePropagation === 'function') {
+        event.stopImmediatePropagation();
+      }
     }
 
-    // Cancel any remaining delayed actions from the old round.
-    clearGameTimers();
+    clearTimers();
 
-    // Reset the game state.
-    x = 82;
+    // Reset every state variable before hiding the overlay.
+    x = START_X;
     direction = -1;
     running = true;
-    chances = 5;
+    chances = START_CHANCES;
     hits = 0;
+    lastFrame = 0;
     animating = false;
 
-    // Restore Ravan completely.
-    ravan.style.left = '82%';
+    // Restore Ravan, including visibility/display in case CSS changed it.
+    ravan.style.left = START_X + '%';
     ravan.style.opacity = '1';
     ravan.style.visibility = 'visible';
-    ravan.style.display = 'block';
+    ravan.style.display = '';
 
-    // Reset counters.
-    chancesDisplay.textContent = '5';
-    hitsDisplay.textContent = '0';
-
-    // Reset the game message.
-    message.textContent = 'Ravan is approaching…';
-
-    // Hide the victory overlay and explosion.
+    // Clear win and explosion overlays completely.
     win.classList.remove('show');
+    win.style.visibility = 'hidden';
+    win.style.pointerEvents = 'none';
     boom.classList.remove('show');
 
-    // Reset the archer animations.
-    archer.classList.remove('draw', 'release');
-    void archer.offsetWidth;
+    // Reset animation classes and reflow so the next shot animates.
+    resetArcher();
+    void ravan.offsetWidth;
+    void boom.offsetWidth;
+    void win.offsetWidth;
 
-    // Allow the player to shoot again.
+    chancesDisplay.textContent = String(START_CHANCES);
+    hitsDisplay.textContent = '0';
+    message.textContent = 'Ravan is approaching…';
     fire.disabled = false;
     fire.textContent = 'RELEASE ARROW ➜';
   }
 
-
-  /* Attach event listeners only once. */
-
+  // Bind controls directly, plus delegated click handling as a fallback.
   fire.addEventListener('click', shootArrow);
-  again.addEventListener('click', restartGame);
-}
+  again.addEventListener('click', restartGame, true);
+  document.addEventListener('click', event => {
+    const playAgainButton = event.target && event.target.closest
+      ? event.target.closest('#again')
+      : null;
+    if (playAgainButton && playAgainButton !== again) restartGame(event);
+  }, true);
+
+  // Ensure the overlay does not block the page while hidden.
+  win.style.visibility = win.classList.contains('show') ? 'visible' : 'hidden';
+  win.style.pointerEvents = win.classList.contains('show') ? 'auto' : 'none';
+
+  window.requestAnimationFrame(gameLoop);
+})();
